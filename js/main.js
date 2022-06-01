@@ -61,8 +61,29 @@
 import { DRACOLoader } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/loaders/DRACOLoader.js';
 import { OrbitControls } from './orbitControls.js';
 import { DragControls } from './DragControls.js';
+import { MeshPhongMaterial } from './three.module.js';
 
-let scene,camera, renderer, starGeo,star,stars,vertices = [],velocities  = [],accelerations  = [],geometry,sphere,controls, more;
+let scene,
+camera, 
+renderer, 
+starGeo,
+stars,
+vertices = [],
+velocities  = [],
+accelerations  = [],
+geometry,
+sphere,
+parentSphere,
+controls, 
+more,
+ParentMoon,
+moonGeo,
+moon,
+saturn,
+parentSaturn,
+sun,
+sunfire,
+parentSunfire;
 
 function init(){
     scene = new THREE.Scene();
@@ -93,31 +114,64 @@ function init(){
         vertices.push( Math.random() * 800 - 400 ); // z
 
         velocities.push( 0 );
-        accelerations.push( Math.random() );
+        accelerations.push( 0.002 );
             
     }
+
     starGeo.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
     let sprite = new THREE.TextureLoader().load('img/star.png');
     let starMaterial = new THREE.PointsMaterial({
-        color:0xaaaaaa,
-        size:0.5,
-        map:sprite
+        color:0xffffff,
+        size:0.1,  
+        map:sprite,
+        transparent: true,
     });
 
     stars = new THREE.Points(starGeo,starMaterial);
 
     scene.add(stars);
 
+
+    // starGeo = new THREE.BufferGeometry();
+
+    // star = new THREE.PointsMaterial({       
+    //     map:sprite
+    // });
+
+    // stars = new THREE.Points(starGeo,star);
+
+    // scene.add(stars);
+    // stars.position.set(0.8,0,0)
+
+
+    const sunGeo = new THREE.SphereGeometry(0.2,32,32);
+    const sunMaterial = new THREE.MeshPhongMaterial({
+        map: new THREE.TextureLoader().load('./img/sun.png')
+    });
+
+    sun = new THREE.Mesh(sunGeo,sunMaterial);
+
+    scene.add(sun);
+
+    
+
+
+
+    // const bloonCom = new Unr
+
     //-----------------
 
-    geometry = new THREE.SphereGeometry( 0.6, 32, 32 );
+    geometry = new THREE.SphereGeometry( 0.1, 32, 32 );
     const material = new THREE.MeshPhongMaterial( {
         roughness:1,
         metaness:0,
         map: new THREE.TextureLoader().load('./img/map.jpg')
      } );
     sphere = new THREE.Mesh( geometry, material );
-    scene.add( sphere );
+    parentSphere = new THREE.Object3D();
+    parentSphere.add(sphere);
+    scene.add(parentSphere);
+    sphere.position.x = -0.8;
 
     const ambientLight = new THREE.AmbientLight(0xffffff,0.2);
     scene.add( ambientLight );
@@ -125,14 +179,57 @@ function init(){
     const pointLight = new THREE.PointLight(0xffffff,1);
     scene.add( pointLight );
     pointLight.position.set(5,2,5);
-    
-    // console.log(sphere.rotation);
 
-    // more = new DragControls([sphere], camera, renderer.domElement ); 
+     //------------
+
+     moonGeo = new THREE.SphereGeometry(0.04 , 32, 32)
+     const moonMaterial = new THREE.MeshPhongMaterial({
+         roughness:1,
+         metaness:0,
+         map: new THREE.TextureLoader().load('./img/moon.jpg')
+     })
+ 
+     moon = new THREE.Mesh(moonGeo,moonMaterial);
+ 
+    ParentMoon = new THREE.Object3D()
+
+    ParentMoon.add(moon);
+    sphere.add(ParentMoon);
+
+    moon.position.set(0.25,0,0);
+    //-------------
+    const saturnGeo = new THREE.SphereGeometry(0.1,32,32);
+    const saturnMaterial = new THREE.MeshPhongMaterial({
+        roughness:1,
+        metaness:0,
+        map: new THREE.TextureLoader().load("./img/saturn.jpg"),
+        slide:THREE.DoubleSide,
+    });
+
+    saturn = new THREE.Mesh(saturnGeo,saturnMaterial);
+
+    parentSaturn = new THREE.Object3D();
+    parentSaturn.add(saturn);
+
+    scene.add(parentSaturn);
+
+    saturn.position.set(2,-0.5,-0.5);
+
+    const ringSaturnGeo = new THREE.RingGeometry(0.12,0.2,32) 
+    const ringSaturnMaterial = new THREE.MeshBasicMaterial({        
+        map: new THREE.TextureLoader().load("./img/saturn.jpg"), 
+        slide:THREE.DoubleSide, 
+    })
+    const ringSaturn = new THREE.Mesh(ringSaturnGeo,ringSaturnMaterial);
+    saturn.add(ringSaturn);
+    ringSaturn.position.x = 0.001;
+    ringSaturn.rotation.x= -0.5 * Math.PI;
+    
+    
     controls = new OrbitControls( camera, renderer.domElement ); 
     
-    console.log(controls.dispose.prototype);
-    // controls.update();
+    // console.log(controls.dispose.prototype);
+
     animate();    
 }
 
@@ -147,7 +244,7 @@ function animate(){
         var accel = accelerations[ i ];
         vel += accel;
         z += vel;
-        velocities[ i ] = 5;
+        velocities[ i ] = 0.5;
         if(z > 300){
             z = -300;
             vel = 0;
@@ -157,11 +254,17 @@ function animate(){
     }
     
     p.needsUpdate  = true;
-    stars.position.y += 0.1;
+    stars.position.z += 0;
+    sun.rotateY(-0.002)
+    sphere.rotateY(-0.004);
+    parentSphere.rotateZ(0.001);
+    ParentMoon.rotateZ(-0.05)
+    moon.rotateY(0.004);
 
-    sphere.rotation.y -= 0.002;
 
-    // controls.update();
+
+
+    controls.update();
     renderer.render(scene,camera);
     requestAnimationFrame(animate);
 }
